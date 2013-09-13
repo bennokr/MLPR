@@ -1,6 +1,5 @@
 from copy import copy
 import numpy as np
-from scipy import misc
 import matplotlib.pyplot as plt
 from math import pi, sin
 
@@ -13,32 +12,36 @@ def gen_sinusoidal(N):
 	t = np.random.normal(0,0.2,N) + np.array(map(sin, x))
 	return x, t
 
+def calculate_phi(x,M):
+	"""
+	Calculates matrix phi for the samples x
+	"""
+	phi = np.tile(copy(x),(M,1))
+	for i in xrange(len(phi)):
+		phi[i] = phi[i]**i
+	return np.matrix(phi.T)
+
 def fit_polynomial(x, t, M):
 	"""
 	Gives best-fit parameters for an M degree polinomial,
 	x is input an t is target
 	Works according to page XXX in the book XXX
 	"""
-	def calculate_phi(x,M):
-		"""
-		Calculates matrix phi for the samples x
-		"""
-		phi = np.tile(copy(x),(M,1))
-		for i in xrange(len(phi)):
-			phi[i] = phi[i]**i
-		return np.matrix(phi.T)
-
-	def Wlm(phi,t):
-		"""
-		Calculates a best-fit W for targets t given phi
-		"""
-		return phi.T.dot(phi).I.dot(phi.T).dot(t)
-
 	# Calculate phi
 	phi = calculate_phi(x, M)
 
 	# Calculate best fit (and do a type cast)
-	return np.array(Wlm(phi, t))[0]
+	Wml =  phi.T.dot(phi).I.dot(phi.T).dot(t)
+	return np.array(Wml)[0]
+
+def fit_polynomial_reg(x,t,M,lamb):
+	# Calculate phi
+	phi = calculate_phi(x, M)
+
+	# Calculate best fit (and do a type cast)
+	Wml = (lamb * np.identity(M) + phi.T.dot(phi)).I.dot(phi.T).dot(t)
+	return np.array(Wml)[0]
+
 
 def polinomialValue(w, x):
 	"""
@@ -57,7 +60,9 @@ if __name__ == "__main__":
 
 	## Generate polinomial models for empirical data
 	polinomialDegrees = [1,3,9]
-	models = map(lambda M : fit_polynomial(x,t,M), polinomialDegrees)
+
+	#models = map(lambda M : fit_polynomial(x,t,M), polinomialDegrees)     			# For 1.3
+	models = map(lambda M : fit_polynomial_reg(x, t, M, 0.2), polinomialDegrees)	# For 1.4
 
 	"""
 	Plotting
