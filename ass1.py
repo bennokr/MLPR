@@ -80,8 +80,7 @@ if __name__ == "__main__":
 
 	## Plot the various models
 	for i in xrange(len(polinomialDegrees)):
-		plt.plot(x, polinomialValue(models[i], x), label="P "+str(polinomialDegrees[i]))
-
+		plt.plot(x, map(lambda z : polinomialValue(models[i], z), x), label="P "+str(polinomialDegrees[i]))
 	## Save the figure to disk
 	#plt.savefig('1.3.png')
 
