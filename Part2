@@ -1,0 +1,58 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Sep 18 11:15:31 2013
+
+@author: Aiko
+"""
+from copy import copy
+import numpy as np
+import matplotlib.pyplot as plt
+from math import pi, sin, exp
+
+#Generates toy data where x is drawn form a uniform distribution between 0 and 2*pi.
+def gen_sinusoidal2(N):
+	x = np.random.uniform(0, 2*pi,N)
+	t = np.random.normal(0,0.2,N) + np.array(map(sin, x))
+	return x, t
+
+def calculate_phi(x,M):
+	"""
+	Calculates matrix phi for the samples x
+	"""
+	phi = np.tile(copy(x),((M+1),1))
+	for i in xrange(len(phi)):
+		phi[i] = phi[i]**i
+	return np.matrix(phi.T)
+ 
+def fit_polynomial_bayes(x,t,M,alpha, beta):
+    phi = calculate_phi(x,M)
+    Sn =(alpha*np.identity(M+1) + beta*phi.T.dot(phi)).I
+    Mn= beta*Sn.dot(phi.T).dot(t.T) #t is a row vector and should be a kolom, therefore transposed.
+    return Sn,np.ravel(Mn) #TODO: Dit moet nog mooier worden opgelost!
+
+def predict_polynomial_bayes(x,m,M,s,beta): #where M is the number of polynomials
+    phi = calculate_phi(x,M)
+    post_var = 1/beta + phi*s.dot(phi.T) #the result of Phi is a row vector, so that's why the first is not transposed and the second one is.
+    pred_mean = m*phi.T #our m is a row vector, it should be a kolom vector, so the transposed can be removed.
+    return np.ravel(post_var), np.ravel(pred_mean) #TODO: Dit moet nog mooier worden opgelost!
+    
+if __name__ == "__main__":
+    #The data for part 2.4 of the questions
+    x, t = gen_sinusoidal2(7)
+    M= 5
+    alpha = 0.5
+    beta = 1/(0.2**2)
+    
+    #just a datapoint
+    xnew = 2
+    
+    Sn, Mn = fit_polynomial_bayes(x,t,M,alpha, beta)
+    
+    #exercise 2.4
+    xplot = np.linspace(0, 2*pi)
+    #meanplot = map(lambda z : predict_polynomial_bayes(z, Mn, M, Sn, beta)[1], xplot)   
+    #print meanplot
+    #plt.plot(xplot,meanplot)
+    #plt.show()
+    a,b = predict_polynomial_bayes(xnew,Mn,M,Sn,beta)
+    print a
