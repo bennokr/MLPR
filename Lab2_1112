@@ -1,0 +1,51 @@
+# -*- coding: utf-8 -*-
+"""
+Spyder Editor
+
+This temporary script file is located here:
+c:\WINNT\profiles\10450793\.spyder2\.temp.py
+"""
+import gzip
+import cPickle
+from copy import copy
+import numpy as np
+import matplotlib.pyplot as plt
+from math import exp
+
+def load_mnist():
+	f = gzip.open('mnist.pkl.gz', 'rb')
+	data = cPickle.load(f)
+	f.close()
+	return data
+
+(x_train, t_train), (x_valid, t_valid), (x_test, t_test) = load_mnist()
+print type(x_train)
+
+def plot_digits(data, numcols, shape=(28,28)):
+    numdigits = data.shape[0]
+    numrows = int(numdigits/numcols)
+    for i in range(numdigits):
+        plt.subplot(numrows, numcols, i)
+        plt.axis('off')
+        plt.imshow(data[i].reshape(shape), interpolation='nearest', cmap='Greys')
+    plt.show()
+    
+plot_digits(x_train[0:8], numcols=4)
+
+def logreg_gradient(x, t, w, b):
+    matrixW = np.zeros(w.shape).T
+    vectorB =np.zeros(b.shape).T
+    for collum in xrange(len(matrixW)):
+        if collum ==t:
+            Z = sum([exp(w.T[k]*x + b[k]) for k in xrange(len(matrixW))])
+            gradW = x - ((exp(w.T[collum]*x + b.T[collum])*x)/Z)
+            gradB = 1-(exp(w.T[collum]*x + b.T[collum])/Z)
+            vectorB = gradB
+            matrixW[collum] = gradW
+        else:
+            Z = sum([exp(w.T[k]*x + b[k]) for k in xrange(len(matrixW))])
+            gradW = - ((exp(w.T[collum]*x + b.T[collum])*x)/Z)
+            gradB = -(exp(w.T[collum]*x + b.T[collum])/Z)
+            vectorB = gradB
+            matrixW[collum] = gradW
+    return matrixW,vectorB
