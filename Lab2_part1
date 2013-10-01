@@ -34,6 +34,16 @@ def plot_digits(data, numcols, shape=(28,28)):
         plt.imshow(data[i].reshape(shape), interpolation='nearest', cmap='Greys')
     plt.show()
 
+def plot_digits2(data, numcols, shape=(28,28)):
+    data = data.T
+    numdigits = len(data)
+    numrows = int(numdigits/numcols)
+    for i in range(numdigits):
+        plt.subplot(numrows, numcols, i)
+        plt.axis('off')
+        plt.imshow(data[i].reshape(shape), interpolation='nearest', cmap='Greys')
+    plt.show()
+    
 "assignemnt 1.112 where the fucntions of 1.111 are filled in. %TODO: if something changes in 1.111 we have to change this formula!" 
 def logreg_gradient(x, t, w, b):
     matrixW = np.zeros(w.shape).T #transposed to fill the matrix easier (per row instead of collum).
@@ -56,31 +66,35 @@ def sgd_iter(x_train, t_train, w, b):
     learn = 0.0001
     for i in xrange(len(t_train)): #%TODO He has to go trough the trainingset in a randomized order.
         gradW, gradB = logreg_gradient(x_train[i], t_train[i], w, b)
-        newW = w + learn*gradW #%TODO checken of dit klopt! Omdat zij zeiden gradient ascent heb ik er een plus van gemaakt, maar weet niet of dit klopt.
+        newW = w + learn*gradW
         newB = b + learn*gradB
         w = newW
         b= newB
-    print w.shape, b.shape
     return w,b
     
-#Start of 1.2.1. Hij klopt nog totaal niet! Moet nog door alle x in trainingset gaan en plotten
-def train(x_train, t_train,x_valid, t_valid, w, b):
+
+def train2(x_train, t_train,x_valid, t_valid, w, b):
     training =1
+    lnP = np.zeros(training)
     for i in xrange(training):
         w,b = sgd_iter(x_train, t_train, w, b)
-        lnP = np.zeros(10)
         for a in xrange(10):
-            Z = sum([exp(w.T[k].dot(x_train[a]) + b[k]) for k in xrange(len(w.T))])
-            q = exp(w.T[a].dot(x_train[a]) + b.T[a])
-            lnP[a] = log(q) - log(Z) #%TODO checken of dit de natuurlijke logaritme is!
+            for sets in xrange(len(x_train)):
+                if t_train[sets] == a:
+                    Z = sum([exp(w.T[k].dot(x_train[sets]) + b[k]) for k in xrange(len(w.T))])
+                    q = exp(w.T[a].dot(x_train[sets]) + b.T[a])
+                    #%Op dit moment sommeer ik over alle T's en alle x's.
+                    lnP[i] = lnP[i] + (log(q) - log(Z)) #%TODO checken of dit de natuurlijke logaritme is!
+    plt.plot(np.arange(1, training+1, 1),lnP, 'o')
+    #vraag 1.2.1
+    plot_digits2(w, numcols=5)
+    plt.show()
+                
 if __name__ == "__main__":
     ## Plot the digits of the given dataset
     (x_train, t_train), (x_valid, t_valid), (x_test, t_test) = load_mnist()
     #plot_digits(x_train[0:8], numcols=4)
     ## some data to test the function
-    x = x_train[0].T
-    t = t_train[0]
-    w = np.ones((784, 10))
-    b = np.array([0,1,2,3,4,5,6,7,8,9]).T
-    print len(x_train)
-    #train(x_train, t_train, x_valid, t_valid, w, b)
+    w = np.zeros((784, 10))
+    b = np.array([0,0,0,0,0,0,0,0,0,0]).T
+    train2(x_train, t_train, x_valid, t_valid, w, b)
