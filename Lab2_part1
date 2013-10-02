@@ -1,7 +1,7 @@
 
 import gzip
 import cPickle
-from copy import copy
+
 import numpy as np
 import matplotlib.pyplot as plt
 from math import exp, log
@@ -35,67 +35,86 @@ def plot_digits2(data, numcols, shape=(28,28)):
     
 "assignemnt 1.112 where the fucntions of 1.111 are filled in. %TODO: if something changes in 1.111 we have to change this formula!" 
 def logreg_gradient(x, t, w, b):
-    matrixW = np.zeros(w.shape).T #transposed to fill the matrix easier (per row instead of collum).
+    matrixW = np.zeros(w.shape).T #transposed to fill the matrix easier (per row instead of column).
     vectorB = np.zeros(b.shape).T
-    for collum in xrange(len(matrixW)):
-        Z = sum([exp(w.T[k].dot(x) + b[k]) for k in xrange(len(matrixW))])
-        q = exp(w.T[collum].dot(x) + b.T[collum])
-        if collum ==t:
-            gradW = x - ((q*x)/Z)
-            gradB = 1-(q/Z)
+
+    wT = w.T
+    bT = b.T
+
+    Z = sum([exp(wT[k].dot(x) + b[k]) for k in xrange(len(matrixW))])
+
+    for column in xrange(len(matrixW)):
+        q = exp(wT[column].dot(x) + bT[column])
+
+        if column == t:
+            gradW = x - ( (q*x)/Z )
+            gradB = 1 - ( q/Z )
+            logP = log(q) - log(Z)
         else:
-            gradW = -((q*x)/Z)
-            gradB = -(q/Z)
-        vectorB[collum] = gradB
-        matrixW[collum] = gradW
-    return matrixW.T,vectorB.T #transpose them back to give the right formula back.
+            gradW = -( (q*x)/Z )
+            gradB = -( q/Z )
+
+        vectorB[column] = gradB
+        matrixW[column] = gradW
+
+    return matrixW.T, vectorB.T #transpose them back to give the right formula back.
+
 
 "Assignment 1.1.3, maar mijn aannames moeten nog worden gecheckt."
 def sgd_iter(x_train, t_train, w, b):
     learn = 0.0001
-    all_indices = np.arange(len(x_train),dtype=int)
+
+    all_indices = range(len(x_train))
     np.random.shuffle(all_indices)
+
     for i in all_indices:
         gradW, gradB = logreg_gradient(x_train[i], t_train[i], w, b)
-        w = w + learn*gradW
-        b = b + learn*gradB
-    return w,b
+        w += learn*gradW
+        b += learn*gradB
+    return w, b
 
 def logPData(x, t, w, b):
-    Z = sum([exp(w.T[k].dot(x) + b[k]) for k in xrange(len(w.T))]) #W.T to count the colloms 
+    Z = sum( [exp(w.T[k].dot(x) + b[k]) for k in xrange(len(w.T))] )
     q = exp(w.T[t].dot(x) + b.T[t])
-    logP = log(q)-log(Z)
-    return logP
+    return log(q)-log(Z)
 
 
-def train(x_train, t_train, x_valid, t_valid, w, b):
-    training = 4
-    logP=np.zeros(training)
-    logPvalid=np.zeros(training)
+def main(x_train, t_train, x_valid, t_valid, w, b, training_iterations=4):
+    start = time()
+
+    logP = np.zeros(training_iterations)
+    logPvalid = np.zeros(training_iterations)
+
+    # This will be filled on the last training iteration to display the low8 and high8
     last_iteration_values = []
 
-    for i in xrange(training):
-        w,b = sgd_iter(x_train, t_train, w, b)
+    for i in xrange(training_iterations):
+        w, b = sgd_iter(x_train, t_train, w, b)
 
         for j in xrange(len(x_train)):
-            logP[i] = logP[i]+logPData(x_train[j], t_train[j], w,b)
+            logP[i] += logPData(x_train[j], t_train[j], w, b)
+
         for j in xrange(len(x_valid)):
-            v = logPData(x_valid[j], t_valid[j], w,b)
-            logPvalid[i] = logPvalid[i] + v
-            if i == training-1:
+            v = logPData(x_valid[j], t_valid[j], w, b)
+            logPvalid[i] += v
+
+            if i == training_iterations-1:
                 last_iteration_values.append((x_valid[j], t_valid[j], v))
+
+    stop = time()
+
+    print "Time: ", int(stop-start+0.5)
 
     logP = logP / len(x_train)
     logPvalid = logPvalid / len(x_valid)
 
-    last_iteration_values.sort(key=lambda tup : tup[2])
+    last_iteration_values.sort(key = lambda tup : tup[2])
 
     plot_digits(np.array(map(lambda x : x[0], last_iteration_values[0:8])), numcols = 4)
     plot_digits(np.array(map(lambda x : x[0], last_iteration_values[len(last_iteration_values)-8:])), numcols = 4)
 
-
-    plt.plot(range(1,training+1),logP, range(1,training+1),logPvalid)
-    plt.plot(range(1,training+1),logP,'o', range(1,training+1),logPvalid, 'bs')
+    plt.plot(range(1,training_iterations+1), logP, range(1,training_iterations+1), logPvalid)
+    plt.plot(range(1,training_iterations+1), logP, 'o', range(1,training_iterations+1), logPvalid, 'bs')
     plt.show()
 
     #vraag 1.2.1
@@ -103,23 +122,18 @@ def train(x_train, t_train, x_valid, t_valid, w, b):
     plt.show()
 
 if __name__ == "__main__":
-    start = time()
-    ## Plot the digits of the given dataset
+    """ Load program data and start """
     (x_train, t_train), (x_valid, t_valid), (x_test, t_test) = load_mnist()
 
-    #plot_digits(x_train[0:8], numcols=4)
-    ## some data to test the function
+    #Prepare our weights
     w = np.zeros((784, 10))
     b = np.zeros(10).T
 
+    training_iterations = 4
     small = False
-    if small != False:
-        train(x_train[0:small], t_train[0:small], x_valid[0:small], t_valid[0:small], w, b)
+    if small == False:
+        main(x_train, t_train, x_valid, t_valid, w, b, training_iterations)
     else:
-        train(x_train, t_train, x_valid, t_valid, w, b)
+        main(x_train[0:small], t_train[0:small], x_valid[0:small], t_valid[0:small], w, b, training_iterations)
 
-    stop = time()
-
-    print "Time: ", int(stop-start+0.5)
-
-
+    
