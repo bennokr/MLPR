@@ -66,29 +66,29 @@ def sgd_iter(x_train, t_train, w, b):
     learn = 0.0001
     all_indices = np.arange(len(x_train),dtype=int)
     np.random.shuffle(all_indices)
-    print all_indices
-    for i in all_indices: #%TODO He has to go trough the trainingset in a randomized order.
+    for i in all_indices:
         gradW, gradB = logreg_gradient(x_train[i], t_train[i], w, b)
-        newW = w + learn*gradW
-        newB = b + learn*gradB
-        w = newW
-        b= newB
+        w = w + learn*gradW
+        b = b + learn*gradB
     return w,b
-    
 
-def train2(x_train, t_train,x_valid, t_valid, w, b):
+def logPData(x, t, w, b):
+    Z = sum([exp(w.T[k].dot(x) + b[k]) for k in xrange(len(w.T))]) #W.T to count the colloms 
+    q = exp(w.T[t].dot(x) + b.T[t])
+    logP = log(q)-log(Z)
+    return logP
+
+def train(x_train, t_train,x_valid, t_valid, w, b):
     training =1
-    lnP = np.zeros(training)
+    logP=np.zeros(training)
+    logPvalid=np.zeros(training)
     for i in xrange(training):
         w,b = sgd_iter(x_train, t_train, w, b)
-        for a in xrange(10):
-            for sets in xrange(len(x_train)):
-                if t_train[sets] == a:
-                    Z = sum([exp(w.T[k].dot(x_train[sets]) + b[k]) for k in xrange(len(w.T))])
-                    q = exp(w.T[a].dot(x_train[sets]) + b.T[a])
-                    #%Op dit moment sommeer ik over alle T's en alle x's.
-                    lnP[i] = lnP[i] + (log(q) - log(Z)) #%TODO checken of dit de natuurlijke logaritme is!
-    plt.plot(np.arange(1, training+1, 1),lnP, 'o')
+        for data in xrange(len(x_train)):
+            logP[i] = logP[i]+logPData(x_train[i],t_train_w,b)
+        for data in xrange(len(x_valid)):
+            logPvalid[i] = logPvalid[i]+logPData(x_valid[i],t_valid,w,b)
+    plt.plot(range(1,training+1),logP,'o',range(1,training+1),logPvalid,'bs')
     #vraag 1.2.1
     plot_digits2(w, numcols=5)
     plt.show()
@@ -98,7 +98,8 @@ if __name__ == "__main__":
     (x_train, t_train), (x_valid, t_valid), (x_test, t_test) = load_mnist()
     #plot_digits(x_train[0:8], numcols=4)
     ## some data to test the function
+    print log(exp(10))
     w = np.zeros((784, 10))
     b = np.array([0,0,0,0,0,0,0,0,0,0]).T
     sgd_iter(x_train, t_train, w, b)
-    #train2(x_train, t_train, x_valid, t_valid, w, b)
+    train(x_train[0:1000], t_train[0:1000], x_valid, t_valid, w, b)
