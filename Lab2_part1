@@ -1,17 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Oct 01 08:47:47 2013
 
-@author: Aiko
-"""
-
-# -*- coding: utf-8 -*-
-"""
-Spyder Editor
-
-This temporary script file is located here:
-c:\WINNT\profiles\10450793\.spyder2\.temp.py
-"""
 import gzip
 import cPickle
 from copy import copy
@@ -19,11 +6,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from math import exp, log
 
+from time import time
+
 def load_mnist():
-	f = gzip.open('mnist.pkl.gz', 'rb')
-	data = cPickle.load(f)
-	f.close()
-	return data
+    f = gzip.open('mnist.pkl.gz', 'rb')
+    data = cPickle.load(f)
+    f.close()
+    return data
 
 def plot_digits(data, numcols, shape=(28,28)):
     numdigits = data.shape[0]
@@ -78,28 +67,59 @@ def logPData(x, t, w, b):
     logP = log(q)-log(Z)
     return logP
 
-def train(x_train, t_train,x_valid, t_valid, w, b):
-    training =1
+
+def train(x_train, t_train, x_valid, t_valid, w, b):
+    training = 4
     logP=np.zeros(training)
     logPvalid=np.zeros(training)
+    last_iteration_values = []
+
     for i in xrange(training):
         w,b = sgd_iter(x_train, t_train, w, b)
-        for data in xrange(len(x_train)):
-            logP[i] = logP[i]+logPData(x_train[i],t_train_w,b)
-        for data in xrange(len(x_valid)):
-            logPvalid[i] = logPvalid[i]+logPData(x_valid[i],t_valid,w,b)
-    plt.plot(range(1,training+1),logP,'o',range(1,training+1),logPvalid,'bs')
+
+        for j in xrange(len(x_train)):
+            logP[i] = logP[i]+logPData(x_train[j], t_train[j], w,b)
+        for j in xrange(len(x_valid)):
+            v = logPData(x_valid[j], t_valid[j], w,b)
+            logPvalid[i] = logPvalid[i] + v
+            if i == training-1:
+                last_iteration_values.append((x_valid[j], t_valid[j], v))
+
+    logP = logP / len(x_train)
+    logPvalid = logPvalid / len(x_valid)
+
+    last_iteration_values.sort(key=lambda tup : tup[2])
+
+    plot_digits(np.array(map(lambda x : x[0], last_iteration_values[0:8])), numcols = 4)
+    plot_digits(np.array(map(lambda x : x[0], last_iteration_values[len(last_iteration_values)-8:])), numcols = 4)
+
+
+    plt.plot(range(1,training+1),logP, range(1,training+1),logPvalid)
+    plt.plot(range(1,training+1),logP,'o', range(1,training+1),logPvalid, 'bs')
+    plt.show()
+
     #vraag 1.2.1
     plot_digits2(w, numcols=5)
     plt.show()
-                
+
 if __name__ == "__main__":
+    start = time()
     ## Plot the digits of the given dataset
     (x_train, t_train), (x_valid, t_valid), (x_test, t_test) = load_mnist()
+
     #plot_digits(x_train[0:8], numcols=4)
     ## some data to test the function
-    print log(exp(10))
     w = np.zeros((784, 10))
-    b = np.array([0,0,0,0,0,0,0,0,0,0]).T
-    sgd_iter(x_train, t_train, w, b)
-    train(x_train[0:1000], t_train[0:1000], x_valid, t_valid, w, b)
+    b = np.zeros(10).T
+
+    small = False
+    if small != False:
+        train(x_train[0:small], t_train[0:small], x_valid[0:small], t_valid[0:small], w, b)
+    else:
+        train(x_train, t_train, x_valid, t_valid, w, b)
+
+    stop = time()
+
+    print "Time: ", int(stop-start+0.5)
+
+
