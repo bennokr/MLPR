@@ -1,3 +1,4 @@
+
 import gzip
 import cPickle
 
@@ -15,16 +16,6 @@ def load_mnist():
 
 def plot_digits(data, numcols, shape=(28,28)):
     numdigits = data.shape[0]
-    numrows = int(numdigits/numcols)
-    for i in range(numdigits):
-        plt.subplot(numrows, numcols, i)
-        plt.axis('off')
-        plt.imshow(data[i].reshape(shape), interpolation='nearest', cmap='Greys')
-    plt.show()
-
-def plot_digits2(data, numcols, shape=(28,28)):
-    data = data.T
-    numdigits = len(data)
     numrows = int(numdigits/numcols)
     for i in range(numdigits):
         plt.subplot(numrows, numcols, i)
@@ -117,7 +108,7 @@ def main(x_train, t_train, x_valid, t_valid, w, b, training_iterations=4):
     plt.show()
 
     #vraag 1.2.1
-    plot_digits2(w, numcols=5)
+    plot_digits(w.T, numcols=5)
     plt.show()
 
 if __name__ == "__main__":
@@ -136,3 +127,4 @@ if __name__ == "__main__":
         main(x_train[0:small], t_train[0:small], x_valid[0:small], t_valid[0:small], w, b, training_iterations)
 
     
+
